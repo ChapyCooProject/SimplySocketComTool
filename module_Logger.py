@@ -5,7 +5,7 @@ import threading
 
 from logging import getLogger, Formatter, FileHandler, StreamHandler, DEBUG, ERROR, INFO
 
-def loggingGetLogger():
+def loggingGetLogger(charactor_code):
 
     # logger定義
     logger = getLogger(__name__)
@@ -30,13 +30,13 @@ def loggingGetLogger():
 
     # 出力先ファイル フルパス
     from datetime import datetime
-    logFileName = "error" + datetime.now().strftime("%Y%m%d") + ".log"
+    logFileName = "error" + datetime.now().strftime("%Y%m%d") + "_" + charactor_code + ".log"
     logFilePath = os.path.join(logDir, logFileName)
 
     # ////////////////////////////////////////
     # ファイル出力するためのFileHandlerを設定
     # ////////////////////////////////////////
-    file_handler = FileHandler(logFilePath)
+    file_handler = FileHandler(logFilePath, encoding=charactor_code)
     file_handler.setLevel(ERROR)
     file_handler.setFormatter(formatter)
     

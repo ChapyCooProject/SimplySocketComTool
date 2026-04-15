@@ -21,10 +21,9 @@ from controlCodes import bin2str_controlCode
 
 class SocketComm:
 
-    global logger
-    logger = loggingGetLogger()
-
     def __init__(self, gui):
+
+        self.logger = None
 
         self.gui = gui
         self.listen_socket = None
@@ -38,10 +37,16 @@ class SocketComm:
         self.last_recv_time = 0
         self.recv_timeout = 3
 
+    def set_charactor_code(self):
+        self.charactor_code = self.gui.cbCharCode.get()
+
     # listen
     def listen(self):
 
         try:
+
+            self.set_charactor_code()
+            self.logger = loggingGetLogger(self.charactor_code)
 
             ipAddress = "0.0.0.0"
             portNumber = int(self.gui.tbPortNumber.get())
@@ -54,13 +59,10 @@ class SocketComm:
             self.listen_socket.setblocking(False)
             self.outputSocketLog("TCPサーバ Listen開始", "None")
 
-            # 文字コード
-            self.charactor_code = self.gui.cbCharCode.get()
-
             return True
 
         except Exception as e:
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             msg = "Listen開始時にエラーが発生しました。\r\n" + msg
             messagebox.showerror("SocketComm.listen", msg)
             return False
@@ -148,6 +150,9 @@ class SocketComm:
     def Connect(self):
 
         try:
+            self.set_charactor_code()
+            self.logger = loggingGetLogger(self.charactor_code)
+
             ipAddress = self.gui.tbIpAddress.get()
             portNumber = int(self.gui.tbPortNumber.get())
             timeOut = int(self.gui.tbTimeOut.get())
@@ -157,9 +162,6 @@ class SocketComm:
             self.conn_socket.connect((ipAddress, portNumber))
             self.conn_socket.setblocking(False)
             self.outputSocketLog("TCPクライアント 通信開始", "None")
-
-            # 文字コード
-            self.charactor_code = self.gui.cbCharCode.get()
 
             return True
 
@@ -174,7 +176,7 @@ class SocketComm:
             return False
 
         except Exception as e:
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             msg = "接続確立中にエラーが発生しました。\r\n" + msg
             messagebox.showerror("SocketComm.Connect", msg)
             return False
@@ -214,31 +216,31 @@ class SocketComm:
                     self.last_recv_time = current_time
 
                     # バイト列を文字列に変換
-                    recvStr = self.recv_buffer.decode(self.charactor_code)
+                    recvStr = self.recv_buffer.decode(self.charactor_code, errors="replace")
                     print("受信データ：" + bin2str_controlCode(recvStr))
 
                     # ASTM対応・制御コード
                     recvFin = False
                     if TargetAck:
-                        if self.recv_buffer.decode(self.charactor_code).startswith(ACK):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").startswith(ACK):
                             recvFin = True
                     if TargetNak:
-                        if self.recv_buffer.decode(self.charactor_code).startswith(NAK):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").startswith(NAK):
                             recvFin = True
                     if TargetEnq:
-                        if self.recv_buffer.decode(self.charactor_code).startswith(ENQ):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").startswith(ENQ):
                             recvFin = True
                     if TargetEot:
-                        if self.recv_buffer.decode(self.charactor_code).startswith(EOT):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").startswith(EOT):
                             recvFin = True
                     if TargetCr:
-                        if self.recv_buffer.decode(self.charactor_code).endswith(CR):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").endswith(CR):
                             recvFin = True
                     if TargetLf:
-                        if self.recv_buffer.decode(self.charactor_code).endswith(LF):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").endswith(LF):
                             recvFin = True
                     if TargetCrLf:
-                        if self.recv_buffer.decode(self.charactor_code).endswith(CR + LF):
+                        if self.recv_buffer.decode(self.charactor_code, errors="replace").endswith(CR + LF):
                             recvFin = True
 
                     if recvFin and self.recv_buffer:
@@ -255,7 +257,7 @@ class SocketComm:
         
                 except Exception as e:
                     self.outputSocketLog("ソケットエラー", "None")
-                    msg = logger.error_exception(e)
+                    msg = self.logger.error_exception(e)
                     msg = "データ受信時にエラーが発生しました。\r\n" + msg
                     messagebox.showerror("SocketComm.Receive", msg)
 
@@ -269,7 +271,7 @@ class SocketComm:
                     if current_time - self.last_recv_time >= RecvTimeout:
                         print("受信待機終了")
                         # バイト列を文字列に変換
-                        recvStr = self.recv_buffer.decode(self.charactor_code)
+                        recvStr = self.recv_buffer.decode(self.charactor_code, errors="replace")
                         print("受信データ：" + bin2str_controlCode(recvStr))
                         # 送受信ログ出力
                         self.outputSocketLog(bin2str_controlCode(recvStr), "Recv")
@@ -280,7 +282,7 @@ class SocketComm:
 
         except Exception as e:
 
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             msg = "データ受信時にエラーが発生しました。\r\n" + msg
             messagebox.showerror("SocketComm.Receive", msg)
 
@@ -297,9 +299,9 @@ class SocketComm:
             if sendData:
                 # データ送信（文字列をバイト列に変換）
                 try:
-                    sock.sendall(str2bin_controlCode(sendData).encode(self.charactor_code))
+                    sock.sendall(str2bin_controlCode(sendData).encode(self.charactor_code, errors="replace"))
                 except Exception as e:
-                    msg = logger.error_exception(e)
+                    msg = self.logger.error_exception(e)
                     msg = "データ送信時にエラーが発生しました。\r\n" + msg
                     messagebox.showerror("SocketComm.SendManual", msg)
                     return False
@@ -326,9 +328,9 @@ class SocketComm:
 
                 # データ送信（文字列をバイト列に変換）
                 try:
-                    self.conn_socket.sendall(str2bin_controlCode(rec).encode(self.charactor_code))
+                    self.conn_socket.sendall(str2bin_controlCode(rec).encode(self.charactor_code, errors="replace"))
                 except Exception as e:
-                    msg = logger.error_exception(e)
+                    msg = self.logger.error_exception(e)
                     msg = "データ送信時にエラーが発生しました。\r\n" + msg
                     messagebox.showerror("SocketComm.SendAuto", msg)
                     return False
@@ -349,15 +351,15 @@ class SocketComm:
                                 return False
                             recvBin += data
                             if ExistStxEtx:
-                                if recvBin.decode(self.charactor_code).endswith(STX + ACK + ETX):
+                                if recvBin.decode(self.charactor_code, errors="replace").endswith(STX + ACK + ETX):
                                     break
-                                if recvBin.decode(self.charactor_code).endswith(STX + NAK + ETX):
+                                if recvBin.decode(self.charactor_code, errors="replace").endswith(STX + NAK + ETX):
                                     sendStatus = False
                                     break
                             else:
-                                if recvBin.decode(self.charactor_code).endswith(ACK):
+                                if recvBin.decode(self.charactor_code, errors="replace").endswith(ACK):
                                     break
-                                if recvBin.decode(self.charactor_code).endswith(NAK):
+                                if recvBin.decode(self.charactor_code, errors="replace").endswith(NAK):
                                     sendStatus = False
                                     break
                         except BlockingIOError: #データ未受信は無視
@@ -365,7 +367,7 @@ class SocketComm:
                         except UnicodeDecodeError: #2バイト以上の文字は無視
                             pass
                         except Exception as e:
-                            msg = logger.error_exception(e)
+                            msg = self.logger.error_exception(e)
                             msg = "データ送信時にエラーが発生しました。\r\n" + msg
                             messagebox.showerror("SocketComm.SendAuto", msg)
                             return False
@@ -374,7 +376,7 @@ class SocketComm:
 
                     if recvBin:
                         # バイト列を文字列に変換
-                        recvStr = recvBin.decode(self.charactor_code)
+                        recvStr = recvBin.decode(self.charactor_code, errors="replace")
                         # 送受信ログ出力
                         self.outputSocketLog(bin2str_controlCode(recvStr), "Recv")
 
@@ -390,7 +392,7 @@ class SocketComm:
                         data = self.conn_socket.recv(4096)
                         if data:
                             # バイト列を文字列に変換
-                            recvStr = data.decode(self.charactor_code)
+                            recvStr = data.decode(self.charactor_code, errors="replace")
                             # 送受信ログ出力
                             self.outputSocketLog(bin2str_controlCode(recvStr), "Recv")
                         else:
@@ -400,7 +402,7 @@ class SocketComm:
                     except BlockingIOError: #データ未受信は無視
                         pass
                     except Exception as e:
-                        msg = logger.error_exception(e)
+                        msg = self.logger.error_exception(e)
                         msg = "データ送信時にエラーが発生しました。\r\n" + msg
                         messagebox.showerror("SocketComm.SendAuto", msg)
                         return False
@@ -430,7 +432,7 @@ class SocketComm:
         os.makedirs(logDir, exist_ok=True)
 
         # 出力先フルパス
-        txtPath = os.path.join(logDir, "socketLog" + dt_now.strftime("%Y%m%d") + ".txt")
+        txtPath = os.path.join(logDir, "socketLog" + dt_now.strftime("%Y%m%d") + "_" + self.charactor_code + ".txt")
 
         # 送信ログ、受信ログ、それ以外
         logOpt = ""
@@ -442,7 +444,7 @@ class SocketComm:
             logOpt = "\t<---\t" # 受信ログ
 
         # ファイル書き出し
-        f = open(txtPath, "a")
+        f = open(txtPath, "a", encoding=self.charactor_code)
         f.write(dt_now.strftime("%Y/%m/%d %H:%M:%S"))
         f.write(logOpt)
         f.write(logStr)
@@ -455,6 +457,5 @@ class SocketComm:
                                      + logStr 
                                      + "\r\n")
         self.gui.txtSocketLog.update()
-
 
         print(logStr)

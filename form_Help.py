@@ -37,6 +37,7 @@ class HelpWindow:
 
         # Markdown読み込み
         md_text = self._load_help_file()
+        md_text = md_text.replace("{APP_NAME}", self.get_exe_name())
         self._render_markdown(txt, md_text)
         txt.configure(state=tk.DISABLED)
 
@@ -52,6 +53,16 @@ class HelpWindow:
             base_path = os.path.dirname(os.path.abspath(__file__))
     
         return os.path.join(base_path, "help.md")
+
+    def get_exe_name(self):
+        if getattr(sys, 'frozen', False):
+            # exe化された場合
+            app_name = os.path.basename(sys.executable)
+        else:
+            # 開発環境の場合
+            app_name = os.path.basename(sys.argv[0])
+    
+        return app_name
 
     # -----------------
     # ヘルプファイル読み込み

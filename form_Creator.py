@@ -3,6 +3,8 @@ import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
+import ctypes
+import subprocess
 
 from module_SocketComm import SocketComm
 from module_Logger import loggingGetLogger
@@ -10,9 +12,6 @@ from module_Threading import ThreadCustom
 from module_TkUtils import with_watch
 from form_Help import HelpWindow
 from form_Version import VersionWindow
-
-global logger
-logger = loggingGetLogger()
 
 """
 FormCreatorクラス　（tk.Frameを継承）
@@ -23,6 +22,9 @@ class FormCreator(tk.Frame):
     # tkinterのFrameを継承したGUIクラス
     # 通信設定、データ送受信、ログ表示などのUIを構築
     def __init__(self, master = None):
+
+        # logger定義
+        self.logger = None
 
         # グローバル変数定義
         self.CHARACTOR_CODE = "ascii" # デフォルト文字コード
@@ -55,6 +57,18 @@ class FormCreator(tk.Frame):
         menubar = tk.Menu(self.master)
         self.master.config(menu=menubar)
         menubar.add_command(label="終了", command=self.form_destroy)
+        wintools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Windowsツール", menu=wintools_menu)
+        wintools_menu.add_command(label="デバイスマネージャー", command=self.devmgmt)
+        wintools_menu.add_command(label="ネットワーク接続一覧", command=self.ncpa)
+        wintools_menu.add_command(label="ファイアウォール", command=self.firewall)
+        wintools_menu.add_command(label="リソースモニター", command=self.resmon)
+        wintools_menu.add_command(label="タスクマネージャー", command=self.taskmgr)
+        wintools_menu.add_command(label="イベントビューアー", command=self.eventvwr)
+        wintools_menu.add_command(label="サービス", command=self.services)
+        wintools_menu.add_command(label="システム情報", command=self.msinfo)
+        wintools_menu.add_command(label="コマンドプロンプト（管理者）", command=self.cmd_admin)
+        wintools_menu.add_command(label="コマンドプロンプト（ipconfig実行）", command=self.ipconfig)
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="ヘルプ", menu=help_menu)
         help_menu.add_command(label="このソフトについて", command=lambda: HelpWindow(self.master).show())
@@ -168,8 +182,8 @@ class FormCreator(tk.Frame):
         self.valTargetNak = tk.BooleanVar(value=True)
         self.valTargetEnq = tk.BooleanVar(value=True)
         self.valTargetEot = tk.BooleanVar(value=True)
-        self.valTargetCr = tk.BooleanVar(value=True)
-        self.valTargetLf = tk.BooleanVar(value=True)
+        self.valTargetCr = tk.BooleanVar(value=False)
+        self.valTargetLf = tk.BooleanVar(value=False)
         self.valTargetCrLf = tk.BooleanVar(value=True)
 
         # チェックボタンの作成
@@ -379,6 +393,9 @@ class FormCreator(tk.Frame):
 
         try:
 
+            # 指定した文字コードでlogger再定義
+            self.logger = loggingGetLogger(self.cbCharCode.get())
+
             # ボタン無効化
             self.btnOpenClose.configure(state=tk.DISABLED)
             self.btnOpenClose.update()
@@ -464,7 +481,7 @@ class FormCreator(tk.Frame):
 
         except Exception as e:
 
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             messagebox.showerror("SocketStartStop", msg)
 
     # ========================================
@@ -491,7 +508,7 @@ class FormCreator(tk.Frame):
 
         except Exception as e:
 
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             messagebox.showerror("threadStart", msg)
 
 
@@ -508,7 +525,7 @@ class FormCreator(tk.Frame):
 
         except Exception as e:
 
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             messagebox.showerror("threadStop", msg)
 
 
@@ -525,7 +542,7 @@ class FormCreator(tk.Frame):
 
         except Exception as e:
 
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             messagebox.showerror("threadRestart", msg)
 
 
@@ -552,7 +569,7 @@ class FormCreator(tk.Frame):
 
         except Exception as e:
 
-            msg = logger.error_exception(e)
+            msg = self.logger.error_exception(e)
             messagebox.showerror("threadEnd", msg)
 
 
@@ -727,3 +744,56 @@ class FormCreator(tk.Frame):
             self.tbTimeOut.configure(state=tk.NORMAL)
             self.cbCharCode.configure(state="readonly")
             self.btnOpenClose.configure(state=tk.NORMAL)
+
+    # ========================================
+    # Windowsツール呼び出し
+    # ========================================
+    # cmd起動（管理者権限）
+    def run_as_admin(self, cmd):
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", cmd, None, None, 1
+            )
+
+    # cmd起動（通常）
+    def run(self, cmd):
+        subprocess.Popen(cmd, shell=True)
+
+    # デバイスマネージャー
+    def devmgmt(self):
+        self.run("devmgmt.msc")
+
+    # ネットワーク接続一覧
+    def ncpa(self):
+        self.run("ncpa.cpl")
+
+    # ファイアウォール
+    def firewall(self):
+        self.run("wf.msc")
+
+    # リソースモニター
+    def resmon(self):
+        self.run("resmon")
+
+    # タスクマネージャー
+    def taskmgr(self):
+        self.run("taskmgr")
+
+    # イベントビューアー
+    def eventvwr(self):
+        self.run("eventvwr")
+
+    # サービス
+    def services(self):
+        self.run("services.msc")
+
+    # システム情報
+    def msinfo(self):
+        self.run("msinfo32")
+
+    # コマンドプロンプト（管理者）
+    def cmd_admin(self):
+        self.run_as_admin("cmd")
+
+    # コマンドプロンプト（ipconfig実行）
+    def ipconfig(self):
+        self.run('start cmd /k ipconfig')

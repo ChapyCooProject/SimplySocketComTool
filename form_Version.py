@@ -25,9 +25,9 @@ class VersionWindow:
 
         # 表示内容
         tk.Label(frame, text="簡易ソケット通信ソフト", font=title_font).pack(pady=(0,10))
-        tk.Label(frame, text="Version: 1.0.0", font=label_font).pack(pady=2)
+        tk.Label(frame, text="Version: 1.1.0", font=label_font).pack(pady=2)
         tk.Label(frame, text="作成者: ChapyCooProject", font=label_font).pack(pady=2)
-        tk.Label(frame, text="更新日: 2026-03-12", font=label_font).pack(pady=2)
+        tk.Label(frame, text="更新日: 2026-04-15", font=label_font).pack(pady=2)
         tk.Label(frame, text="このツールはTCP/IPソケット通信のテストや\n送受信データの確認用として使用してください。", 
                  font=label_font, justify=tk.LEFT).pack(pady=10)
 

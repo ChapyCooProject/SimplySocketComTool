@@ -19,7 +19,7 @@ Introduction
 Startup and Exit
 ---------------------------------------
 
-   * Launch the executable file "SimpleSocketCommunicationTool.exe".
+   * Launch the executable file "SimpleSocketCommunication.exe".
    * To exit, click "Exit" from the menu in the top-left corner of the screen.
 
 Selecting and Starting Communication Mode
@@ -102,4 +102,8 @@ Notes on Sending Data
       - 0x1E: \<RS\>
       - 0x1F: \<US\>
       - 0x7F: \<DEL\>
+
+License
+-----------------------------------------------
+This project is licensed under the MIT License.
 
