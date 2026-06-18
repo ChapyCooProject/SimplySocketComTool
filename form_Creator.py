@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 import threading
 import ctypes
 import subprocess
+import datetime
 
 from module_SocketComm import SocketComm
 from module_Logger import loggingGetLogger
@@ -105,7 +106,7 @@ class FormCreator(tk.Frame):
         self.label6 = ttk.Label(self.frame1, text="文字コード")
 
         # テキストボックスの作成
-        self.tbIpAddress = ttk.Entry(self.frame1, width=15)
+        self.tbIpAddress = ttk.Entry(self.frame1, width=10)
         self.tbPortNumber = ttk.Entry(self.frame1, width=5)
         self.tbBackLog = ttk.Entry(self.frame1, width=2)
         self.tbTimeOut = ttk.Entry(self.frame1, width=2)
@@ -120,7 +121,7 @@ class FormCreator(tk.Frame):
 
         # コンボボックスの作成
         self.cbSocketMode = ttk.Combobox(self.frame1, values=socketMode, state="readonly")
-        self.cbCharCode = ttk.Combobox(self.frame1, values=charCodeList, state="readonly")
+        self.cbCharCode = ttk.Combobox(self.frame1, values=charCodeList, state="readonly", width=10)
         #self.cbSocketMode.set(socketMode[0])
         self.cbCharCode.set(charCodeList[1])
 
@@ -129,6 +130,7 @@ class FormCreator(tk.Frame):
 
         # コマンドボタンの作成
         self.btnOpenClose = ttk.Button(self.frame1, text="開始", command=self.SocketStartStop)
+        self.btnPing = ttk.Button(self.frame1, text="Ping", command=self.run_ping)
 
         # 進捗メッセージ用ラベル
         self.lblProgress = ttk.Label(self.frame1, text="", foreground="blue", anchor="e")
@@ -140,22 +142,24 @@ class FormCreator(tk.Frame):
         self.label4.grid(        row=3, column=0, columnspan=1, padx=10, pady=2, sticky="w")
         self.label5.grid(        row=4, column=0, columnspan=1, padx=10, pady=2, sticky="w")
         self.label6.grid(        row=5, column=0, columnspan=1, padx=10, pady=2, sticky="w")
-        self.cbSocketMode.grid(  row=0, column=1, columnspan=2, padx=10, pady=2, sticky="w")
-        self.tbIpAddress.grid(   row=1, column=1, columnspan=2, padx=10, pady=2, sticky="w")
+        self.cbSocketMode.grid(  row=0, column=1, columnspan=2, padx=10, pady=2, sticky="ew")
+        self.tbIpAddress.grid(   row=1, column=1, columnspan=1, padx=(10,0), pady=2, sticky="ew")
+        self.btnPing.grid(       row=1, column=2, columnspan=1, padx=(0,10), pady=2, sticky="e")
         self.tbPortNumber.grid(  row=2, column=1, columnspan=1, padx=10, pady=2, sticky="w")
         self.tbBackLog.grid(     row=3, column=1, columnspan=1, padx=10, pady=2, sticky="w")
         self.tbTimeOut.grid(     row=4, column=1, columnspan=1, padx=10, pady=2, sticky="w")
-        self.cbCharCode.grid(    row=5, column=1, columnspan=2, padx=10, pady=2, sticky="w")
+        self.cbCharCode.grid(    row=5, column=1, columnspan=1, padx=10, pady=2, sticky="w")
         self.lblProgress.grid(   row=6, column=0, columnspan=2, padx=10, pady=2, sticky="e")
-        self.btnOpenClose.grid(  row=6, column=2, columnspan=1, padx=10, pady=2, sticky="ew")
+        self.btnOpenClose.grid(  row=6, column=2, columnspan=1, padx=10, pady=2, sticky="e")
 
         # 列幅比率設定
-        self.frame1.grid_columnconfigure(0, weight=2)
+        self.frame1.grid_columnconfigure(0, weight=0)
         self.frame1.grid_columnconfigure(1, weight=1)
-        self.frame1.grid_columnconfigure(2, weight=1)
+        self.frame1.grid_columnconfigure(2, weight=0)
 
         # 初期状態は無効化
         self.tbIpAddress.configure(state=tk.DISABLED)
+        self.btnPing.configure(state=tk.DISABLED)
         self.tbPortNumber.configure(state=tk.DISABLED)
         self.tbBackLog.configure(state=tk.DISABLED)
         self.tbTimeOut.configure(state=tk.DISABLED)
@@ -325,6 +329,7 @@ class FormCreator(tk.Frame):
         self.tab_order = [
             self.cbSocketMode,
             self.tbIpAddress,
+            self.btnPing,
             self.tbPortNumber,
             self.tbBackLog,
             self.tbTimeOut,
@@ -467,6 +472,7 @@ class FormCreator(tk.Frame):
                     self.btnSendAuto.configure(state=tk.NORMAL)
                     self.cbSocketMode.configure(state=tk.DISABLED)
                     self.tbIpAddress.configure(state=tk.DISABLED)
+                    self.btnPing.configure(state=tk.DISABLED)
                     self.tbPortNumber.configure(state=tk.DISABLED)
                     self.tbBackLog.configure(state=tk.DISABLED)
                     self.tbTimeOut.configure(state=tk.DISABLED)
@@ -732,6 +738,7 @@ class FormCreator(tk.Frame):
     def on_select(self, event):
         if self.cbSocketMode.current() == 0:
             self.tbIpAddress.configure(state=tk.DISABLED)
+            self.btnPing.configure(state=tk.DISABLED)
             self.tbPortNumber.configure(state=tk.NORMAL)
             self.tbBackLog.configure(state=tk.DISABLED)
             self.tbTimeOut.configure(state=tk.DISABLED)
@@ -739,11 +746,69 @@ class FormCreator(tk.Frame):
             self.btnOpenClose.configure(state=tk.NORMAL)
         else:
             self.tbIpAddress.configure(state=tk.NORMAL)
+            self.btnPing.configure(state=tk.NORMAL)
             self.tbPortNumber.configure(state=tk.NORMAL)
             self.tbBackLog.configure(state=tk.DISABLED)
             self.tbTimeOut.configure(state=tk.NORMAL)
             self.cbCharCode.configure(state="readonly")
             self.btnOpenClose.configure(state=tk.NORMAL)
+
+    # ========================================
+    # PING実行要求
+    # ========================================
+    def run_ping(self):
+
+        try:
+            ip = self.tbIpAddress.get().strip()
+        
+            if not ip:
+                messagebox.showerror("Ping", "IPアドレスを入力してください。")
+                return
+
+            threading.Thread(
+                target=self.process_ping,
+                args=(ip,),
+                daemon=True
+            ).start()
+
+        except Exception as e:
+
+            messagebox.showerror("Ping", e)
+
+    # ========================================
+    # PING実行処理
+    # ========================================
+    def process_ping(self, ip):
+
+        self.btnPing.configure(state=tk.DISABLED)
+
+        try:
+            dt_now = datetime.datetime.now()
+            
+            proc = subprocess.Popen(
+                ["ping", ip],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                encoding="cp932"  # Windows日本語環境
+            )
+
+            for line in proc.stdout:
+                self.txtSocketLog.insert(tk.END, 
+                                         dt_now.strftime("%Y/%m/%d %H:%M:%S") 
+                                         + "\t----\t" 
+                                         + line)
+                self.txtSocketLog.see(tk.END)
+                self.txtSocketLog.update()
+
+            proc.wait()
+    
+        except Exception as e:
+
+            messagebox.showerror("Ping", e)
+
+        self.btnPing.configure(state=tk.NORMAL)
 
     # ========================================
     # Windowsツール呼び出し

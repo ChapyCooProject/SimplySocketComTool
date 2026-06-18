@@ -3,6 +3,7 @@ import sys
 import datetime
 import socket
 import time
+import tkinter as tk
 
 from time import sleep
 from tkinter import messagebox
@@ -451,11 +452,12 @@ class SocketComm:
         f.write("\n")
         f.close()
 
-        self.gui.txtSocketLog.insert("1.0", 
+        self.gui.txtSocketLog.insert(tk.END, 
                                      dt_now.strftime("%Y/%m/%d %H:%M:%S") 
                                      + logOpt 
                                      + logStr 
                                      + "\r\n")
+        self.gui.txtSocketLog.see(tk.END)
         self.gui.txtSocketLog.update()
 
         print(logStr)
