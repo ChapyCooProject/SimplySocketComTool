@@ -20,6 +20,12 @@ from controlCodes import LF
 from controlCodes import str2bin_controlCode
 from controlCodes import bin2str_controlCode
 
+charCodeDict = {
+    "ascii": "ascii",
+    "shift-jis": "cp932",
+    "utf-8": "utf-8"
+}
+
 class SocketComm:
 
     def __init__(self, gui):
@@ -39,7 +45,7 @@ class SocketComm:
         self.recv_timeout = 3
 
     def set_charactor_code(self):
-        self.charactor_code = self.gui.cbCharCode.get()
+        self.charactor_code = charCodeDict[self.gui.cbCharCode.get()]
 
     # listen
     def listen(self):

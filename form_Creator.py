@@ -8,6 +8,7 @@ import subprocess
 import datetime
 
 from module_SocketComm import SocketComm
+from module_SocketComm import charCodeDict
 from module_Logger import loggingGetLogger
 from module_Threading import ThreadCustom
 from module_TkUtils import with_watch
@@ -399,7 +400,7 @@ class FormCreator(tk.Frame):
         try:
 
             # 指定した文字コードでlogger再定義
-            self.logger = loggingGetLogger(self.cbCharCode.get())
+            self.logger = loggingGetLogger(charCodeDict[self.cbCharCode.get()])
 
             # ボタン無効化
             self.btnOpenClose.configure(state=tk.DISABLED)
